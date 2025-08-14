@@ -1,6 +1,10 @@
 from processor_regex import classify_with_regex
 from processor_bert import classify_with_bert
 from processor_llm import classify_with_llm
+import webbrowser
+import threading
+import time
+import os
 
 def classify(logs):
     labels = []
@@ -32,8 +36,26 @@ def classify_csv(input_file):
 
     return output_file
 
+def open_browser():
+    """Open browser after a short delay to ensure Flask app is running"""
+    time.sleep(2)  # Wait 2 seconds for Flask to start
+    webbrowser.open('http://localhost:5000')
+
 if __name__ == '__main__':
+    # First run the classification on the test data
     classify_csv("resources/test.csv")
+    print("Classification completed! Opening web interface...")
+    
+    # Start browser in a separate thread
+    browser_thread = threading.Thread(target=open_browser)
+    browser_thread.daemon = True
+    browser_thread.start()
+    
+    # Import and run the Flask app
+    from app import app
+    PORT = int(os.environ.get("PORT", "5000"))
+    app.run(host='0.0.0.0', port=PORT, debug=False)
+    
     # logs = [
     #     ("ModernCRM", "IP 192.168.133.114 blocked due to potential attack"),
     #     ("BillingSystem", "User 12345 logged in."),

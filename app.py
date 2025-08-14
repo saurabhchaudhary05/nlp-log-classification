@@ -4,6 +4,7 @@ import pandas as pd
 import os
 from werkzeug.utils import secure_filename
 from classify import classify
+from download_models import download_model_if_needed
 PORT = int(os.environ.get("PORT", "5000"))
 
 app = Flask(__name__)
@@ -81,4 +82,8 @@ def classify_logs():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
+    # Download models at startup
+    print("Initializing models...")
+    download_model_if_needed()
+    print("Starting Flask application...")
     app.run(host='0.0.0.0', port=PORT, debug=False)
