@@ -87,66 +87,7 @@ BillingSystem,"User 12345 logged in."
 The API returns a CSV with an added column `target_label`.
 
 ---
+<img width="2849" height="1380" alt="image" src="https://github.com/user-attachments/assets/afee589a-f943-463d-849d-949fbaa22df9" />
 
-## API Usage
-
-### Health
-```bash
-curl -s http://localhost:5000/health
-```
-
-### Classify CSV
-```bash
-curl -X POST \
-  -F "file=@resources/test.csv" \
-  -o classified_test.csv \
-  http://localhost:5000/classify
-```
-
----
-
-## Deployment
-
-### Railway (recommended)
-1. Push code to GitHub
-2. On Railway: New Project → Deploy from GitHub
-3. It auto‑installs Python deps and starts with the default command from `Procfile`
-
-Optional env vars:
-- `GROQ_API_KEY` (only if you want LLM fallback for `LegacyCRM` sources)
-
-Notes:
-- First request may download the SentenceTransformer model; allow 30–90s and ~100–200MB cache in the container.
-- Caches are routed to a writable temp dir automatically.
-
-### Render
-Already configured with `render.yaml` and `Procfile`.
-
-### Docker
-```bash
-docker build -t log-classification .
-docker run -p 5000:5000 log-classification
-```
-Open `http://localhost:5000`.
-
----
-
-## Caching and Model Downloads
-To avoid permission errors on hosts, the app sets cache locations at runtime to the OS temp directory using `tempfile.gettempdir()`:
-- `HF_HOME`
-- `HF_HUB_CACHE`
-- `TRANSFORMERS_CACHE`
-- `SENTENCE_TRANSFORMERS_HOME`
-
-This ensures Hugging Face models download to a writable path (e.g., `/tmp/...` on Linux containers, `%LOCALAPPDATA%/Temp/...` on Windows).
-
----
-
-## Troubleshooting
-- **First run is slow / times out**: The embedding model (`all-MiniLM-L6-v2`) downloads on first use. Try again after the cache is warmed.
-- **PermissionError for caches**: Confirm your host allows writing to temp directories. We default to OS temp; most PaaS providers allow this.
-- **LLM fallback returns `Unclassified`**: Set `GROQ_API_KEY` if you want LLM classification for `LegacyCRM` logs.
-- **CSV validation failed**: Ensure headers include `source` and `log_message` exactly.
-
----
+<img width="2779" height="1483" alt="image" src="https://github.com/user-attachments/assets/ebfa6d4b-9155-47c0-8b67-af7dc1dbb6f2" />
 
