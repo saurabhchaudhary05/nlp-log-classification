@@ -2,7 +2,17 @@ from flask import Flask, request, jsonify, send_file, render_template
 from flask_cors import CORS
 import pandas as pd
 import os
+import tempfile
 from werkzeug.utils import secure_filename
+
+# Ensure HuggingFace caches are writable across OS (Windows/Linux/containers)
+_temp_root = tempfile.gettempdir()
+_hf_root = os.path.join(_temp_root, "hf")
+os.environ.setdefault("HF_HOME", _hf_root)
+os.environ.setdefault("HF_HUB_CACHE", os.path.join(_hf_root, "hub"))
+os.environ.setdefault("TRANSFORMERS_CACHE", os.path.join(_hf_root, "transformers"))
+os.environ.setdefault("SENTENCE_TRANSFORMERS_HOME", os.path.join(_hf_root, "sentence-transformers"))
+
 from classify import classify
 from download_models import download_model_if_needed
 PORT = int(os.environ.get("PORT", "5000"))
@@ -82,7 +92,7 @@ def classify_logs():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    # Download models at startup
+    # Prepare model/cache directories at startup (no heavy downloads)
     print("Initializing models...")
     download_model_if_needed()
     print("Starting Flask application...")

@@ -3,155 +3,298 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log Classification API</title>
+    <title>Log Classification</title>
     <style>
+        :root {
+            --bg: #f4f6fb;
+            --panel: #ffffff;
+            --muted: #6b7280;
+            --text: #111827;
+            --primary: #06b6d4;
+            --primary-600: #0891b2;
+            --success-bg: #ecfdf5;
+            --success-text: #065f46;
+            --error-bg: #fef2f2;
+            --error-text: #991b1b;
+            --border: #e5e7eb;
+        }
+        * { box-sizing: border-box; }
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
+            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+            background: linear-gradient(180deg, #e8eef9 0%, #f4f6fb 100%);
+            color: var(--text);
+            margin: 0;
+            padding: 24px;
         }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        .container { max-width: 980px; margin: 0 auto; }
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 24px;
+            box-shadow: 0 10px 25px rgba(2, 6, 23, 0.08);
         }
-        h1 {
-            color: #333;
+        header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+        h1 { font-size: 22px; margin: 0; display: flex; align-items: center; gap: 10px; }
+        .sub { color: var(--muted); font-size: 14px; margin: 0 0 20px; }
+        .status { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+        .dot { width: 10px; height: 10px; border-radius: 999px; background: #64748b; }
+        .dot.ok { background: #10b981; }
+        .dot.bad { background: #ef4444; }
+        .dropzone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 28px;
             text-align: center;
+            transition: border-color .2s, background-color .2s;
+            background: #f9fafb;
         }
-        .upload-form {
-            margin: 20px 0;
-            padding: 20px;
-            border: 2px dashed #ddd;
-            border-radius: 5px;
-            text-align: center;
-        }
-        .upload-form:hover {
-            border-color: #007bff;
-        }
-        input[type="file"] {
-            margin: 10px 0;
-        }
-        button {
-            background: #007bff;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background: #0056b3;
-        }
-        .result {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 5px;
-        }
-        .success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        .loading {
-            display: none;
-            text-align: center;
-            margin: 20px 0;
-        }
+        .dropzone.dragover { border-color: var(--primary); background: #e6f7fb; }
+        .actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        input[type="file"] { display: none; }
+        .btn { background: var(--primary); color: white; border: none; padding: 10px 16px; border-radius: 10px; cursor: pointer; font-size: 14px; }
+        .btn:hover { background: var(--primary-600); }
+        .btn.secondary { background: transparent; border: 1px solid #334155; color: var(--text); }
+        .btn.secondary:hover { background: #0b1528; }
+        .file-info { margin-top: 10px; font-size: 13px; color: var(--muted); text-align: center; }
+        .grid { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 18px; }
+        @media (min-width: 900px) { .grid { grid-template-columns: 1.2fr .8fr; } }
+        table { width: 100%; border-collapse: collapse; border: 1px solid #1f2937; }
+        th, td { padding: 10px 12px; border-bottom: 1px solid #1f2937; font-size: 13px; }
+        th { text-align: left; color: var(--text); background: #f3f4f6; position: sticky; top: 0; }
+        tbody tr:hover { background: #f3f4f6; }
+        .panel-title { font-size: 14px; margin: 0 0 8px; color: var(--muted); }
+        .muted { color: var(--muted); font-size: 13px; }
+        .progress { height: 10px; background: #e5e7eb; border-radius: 999px; overflow: hidden; border: 1px solid #d1d5db; }
+        .bar { height: 100%; width: 0%; background: linear-gradient(90deg, #06b6d4, #0891b2); transition: width .15s; }
+        .progress-row { display: none; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); }
+        .result { margin-top: 16px; padding: 14px; border-radius: 10px; border: 1px solid #86efac; background: var(--success-bg); color: var(--success-text); display: none; }
+        .error { border-color: #fecaca; background: var(--error-bg); color: var(--error-text); }
+        .error pre { white-space: pre-wrap; color: #fca5a5; background: transparent; margin: 8px 0 0; }
+        .tips { font-size: 12px; color: var(--muted); display: flex; gap: 12px; flex-wrap: wrap; }
+        a { color: #93c5fd; text-decoration: none; }
+        a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🔍 Log Classification API</h1>
-        <p>Upload a CSV file with 'source' and 'log_message' columns to classify your logs.</p>
-        
-        <div class="upload-form">
-            <form id="uploadForm" enctype="multipart/form-data">
-                <input type="file" id="fileInput" name="file" accept=".csv" required>
-                <br>
-                <button type="submit">🚀 Classify Logs</button>
-            </form>
+<div class="container">
+    <div class="card">
+        <header>
+            <h1>🔍 Log Classification</h1>
+            <div class="status" id="health">
+                <span class="dot" id="healthDot"></span>
+                <span id="healthText">Checking server…</span>
+            </div>
+        </header>
+        <p class="sub">Upload a CSV with columns <b>source</b> and <b>log_message</b>. We'll classify each row and return a downloadable CSV.</p>
+
+        <div class="dropzone" id="dropzone">
+            <p class="muted" id="dzText">Drag & drop your CSV here, or</p>
+            <div class="actions">
+                <label class="btn" for="fileInput">Choose CSV</label>
+                <button class="btn secondary" id="downloadSample" type="button">Download sample CSV</button>
+                <button class="btn secondary" id="resetBtn" type="button" style="display:none">Reset</button>
+            </div>
+            <input type="file" id="fileInput" accept=".csv" />
+            <div class="file-info" id="fileInfo"></div>
         </div>
 
-        <div class="loading" id="loading">
-            <p>⏳ Processing your file...</p>
+        <div class="grid">
+            <div>
+                <h3 class="panel-title">Preview (first 5 rows)</h3>
+                <div id="preview" class="muted">No file selected.</div>
+            </div>
+            <div>
+                <h3 class="panel-title">Upload</h3>
+                <div class="progress-row" id="progressRow">
+                    <div class="progress" style="flex:1"><div class="bar" id="bar"></div></div>
+                    <span id="pct">0%</span>
+                </div>
+                <div class="actions" style="margin-top:10px; justify-content:flex-start">
+                    <button class="btn" id="uploadBtn" disabled>🚀 Classify Logs</button>
+                    <button class="btn secondary" id="downloadBtn" type="button" style="display:none">⬇️ Download result</button>
+                </div>
+                <div class="tips" style="margin-top:10px">
+                    <span>Max recommended file size: 20 MB</span>
+                    <span>Template columns: source, log_message</span>
+                </div>
+                <div id="result" class="result" role="alert"></div>
+            </div>
         </div>
-
-        <div id="result"></div>
     </div>
 
-    <script>
-        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const fileInput = document.getElementById('fileInput');
-            const loading = document.getElementById('loading');
-            const result = document.getElementById('result');
-            
-            if (!fileInput.files[0]) {
-                alert('Please select a file');
-                return;
-            }
+    <p class="muted" style="text-align:center; margin-top:14px">Having issues? Check <a href="/health" target="_blank">/health</a>.</p>
+</div>
 
-            const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
+<script>
+(function() {
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const fileInfo = document.getElementById('fileInfo');
+    const preview = document.getElementById('preview');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const progressRow = document.getElementById('progressRow');
+    const bar = document.getElementById('bar');
+    const pct = document.getElementById('pct');
+    const result = document.getElementById('result');
+    const resetBtn = document.getElementById('resetBtn');
+    const dzText = document.getElementById('dzText');
 
-            loading.style.display = 'block';
-            result.innerHTML = '';
+    let currentFile = null;
+    let lastBlobUrl = null;
+    let lastFilename = null;
 
-            try {
-                const response = await fetch('/classify', {
-                    method: 'POST',
-                    body: formData
-                });
+    // Health check
+    (async () => {
+        const dot = document.getElementById('healthDot');
+        const text = document.getElementById('healthText');
+        try {
+            const r = await fetch('/health');
+            if (r.ok) { dot.classList.add('ok'); text.textContent = 'Online'; }
+            else { dot.classList.add('bad'); text.textContent = 'Unhealthy'; }
+        } catch(e) { dot.classList.add('bad'); text.textContent = 'Offline'; }
+    })();
 
-                if (response.ok) {
-                    // Download the file
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'classified_' + fileInput.files[0].name;
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    document.body.removeChild(a);
+    // Utilities
+    function bytesToSize(bytes) {
+        const sizes = ['B','KB','MB','GB'];
+        if (bytes === 0) return '0 B';
+        const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)), 10);
+        return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
+    }
+    function parseCsvPreview(text) { const lines = text.split(/\r?\n/).filter(Boolean); const rows = lines.slice(0, 6).map(l => l.split(',')); return rows; }
+    function renderPreview(rows) {
+        if (!rows || rows.length === 0) { preview.textContent = 'No preview available.'; return; }
+        const thead = rows[0];
+        const body = rows.slice(1, 6);
+        let html = '<div style="max-height:260px; overflow:auto; border:1px solid #1f2937; border-radius:10px">';
+        html += '<table><thead><tr>' + thead.map(h => `<th>${h}</th>`).join('') + '</tr></thead><tbody>';
+        if (body.length === 0) { html += '<tr><td colspan="'+thead.length+'" class="muted">No data rows</td></tr>'; }
+        else { html += body.map(r => '<tr>' + r.map(c => `<td>${c}</td>`).join('') + '</tr>').join(''); }
+        html += '</tbody></table></div>';
+        preview.innerHTML = html;
+    }
+    function validateHeader(rows) {
+        if (!rows || rows.length === 0) return 'Empty CSV';
+        const headers = rows[0].map(h => h.trim().toLowerCase());
+        if (!headers.includes('source') || !headers.includes('log_message')) { return "CSV must contain 'source' and 'log_message' columns"; }
+        return null;
+    }
 
-                    result.innerHTML = `
-                        <div class="result success">
-                            <h3>✅ Classification Complete!</h3>
-                            <p>Your classified file has been downloaded automatically.</p>
-                        </div>
-                    `;
+    function resetDownload() {
+        if (lastBlobUrl) { try { URL.revokeObjectURL(lastBlobUrl); } catch(_){} }
+        lastBlobUrl = null; lastFilename = null;
+        downloadBtn.style.display = 'none';
+    }
+
+    function setFile(file) {
+        currentFile = file;
+        result.style.display = 'none';
+        result.classList.remove('error');
+        result.textContent = '';
+        resetDownload();
+
+        if (!file) {
+            fileInfo.textContent = '';
+            preview.textContent = 'No file selected.';
+            uploadBtn.disabled = true;
+            resetBtn.style.display = 'none';
+            dzText.textContent = 'Drag & drop your CSV here, or';
+            return;
+        }
+
+        if (!file.name.toLowerCase().endsWith('.csv')) { showError('Please upload a .csv file'); return setFile(null); }
+        if (file.size > 20 * 1024 * 1024) { showError('File is too large. Please keep it under ~20 MB.'); return setFile(null); }
+
+        fileInfo.textContent = `${file.name} • ${bytesToSize(file.size)}`;
+        resetBtn.style.display = 'inline-block';
+        dzText.textContent = 'Ready to upload';
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            const txt = reader.result;
+            const rows = parseCsvPreview(txt);
+            const err = validateHeader(rows);
+            if (err) { showError(err); uploadBtn.disabled = true; }
+            else { renderPreview(rows); uploadBtn.disabled = false; }
+        };
+        reader.readAsText(file);
+    }
+
+    function showError(msg, details) {
+        result.style.display = 'block';
+        result.classList.add('error');
+        result.innerHTML = `<b>❌ Error:</b> ${msg}` + (details ? `<pre>${details}</pre>` : '');
+    }
+    function showSuccess(msg) {
+        result.style.display = 'block';
+        result.classList.remove('error');
+        result.innerHTML = `✅ ${msg}`;
+    }
+
+    // Drag & drop
+    ['dragenter','dragover'].forEach(evt => dropzone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); dropzone.classList.add('dragover'); }));
+    ['dragleave','drop'].forEach(evt => dropzone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); dropzone.classList.remove('dragover'); }));
+    dropzone.addEventListener('drop', e => { const file = e.dataTransfer.files && e.dataTransfer.files[0]; if (file) setFile(file); });
+
+    // File picker
+    fileInput.addEventListener('change', () => setFile(fileInput.files[0]));
+
+    // Reset
+    resetBtn.addEventListener('click', () => { fileInput.value = ''; setFile(null); });
+
+    // Sample CSV download
+    document.getElementById('downloadSample').addEventListener('click', () => {
+        const sample = ['source,log_message','ModernCRM,"IP 192.168.133.114 blocked due to potential attack"','BillingSystem,"User 12345 logged in"','AnalyticsEngine,"File data_6957.csv uploaded successfully by user User265"','LegacyCRM,"Invoice generation process aborted for order ID 8910 due to invalid tax calculation"'].join('\n');
+        const blob = new Blob([sample], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'sample_logs.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    });
+
+    // Manual download button
+    downloadBtn.addEventListener('click', () => {
+        if (!lastBlobUrl) return;
+        const a = document.createElement('a');
+        a.href = lastBlobUrl; a.download = lastFilename || 'classified_logs.csv';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    });
+
+    // Upload with progress
+    uploadBtn.addEventListener('click', () => {
+        if (!currentFile) return;
+        uploadBtn.disabled = true;
+        progressRow.style.display = 'flex';
+        bar.style.width = '0%'; pct.textContent = '0%';
+        result.style.display = 'none';
+        resetDownload();
+
+        const formData = new FormData();
+        formData.append('file', currentFile);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/classify');
+        xhr.upload.onprogress = function(e) { if (e.lengthComputable) { const percent = Math.round((e.loaded / e.total) * 100); bar.style.width = percent + '%'; pct.textContent = percent + '%'; } };
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                uploadBtn.disabled = false;
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    // Store for manual download
+                    const blob = new Blob([xhr.response], { type: xhr.getResponseHeader('Content-Type') || 'text/csv' });
+                    lastBlobUrl = window.URL.createObjectURL(blob);
+                    lastFilename = 'classified_' + (currentFile?.name || 'logs.csv');
+                    downloadBtn.style.display = 'inline-block';
+                    showSuccess('Classification complete. Click "Download result" to save the CSV.');
                 } else {
-                    const errorData = await response.json();
-                    result.innerHTML = `
-                        <div class="result error">
-                            <h3>❌ Error</h3>
-                            <p>${errorData.error || 'An error occurred during classification.'}</p>
-                        </div>
-                    `;
+                    let details = '';
+                    try { details = JSON.stringify(JSON.parse(xhr.responseText), null, 2); } catch(_) {}
+                    showError('Failed to classify. Please check your CSV columns and try again.', details);
                 }
-            } catch (error) {
-                result.innerHTML = `
-                    <div class="result error">
-                        <h3>❌ Network Error</h3>
-                        <p>Unable to connect to the server. Please try again.</p>
-                    </div>
-                `;
-            } finally {
-                loading.style.display = 'none';
             }
-        });
-    </script>
+        };
+        xhr.responseType = 'arraybuffer';
+        xhr.send(formData);
+    });
+})();
+</script>
 </body>
 </html>
